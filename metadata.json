@@ -1,0 +1,5 @@
+{
+  "name": "Wanzz PPOB Platform",
+  "description": "A comprehensive PPOB (Payment Point Online Bank) application integrated with H2H API, featuring real-time product listing, deposit management, automated transaction tracking, and Telegram bot notifications.",
+  "requestFramePermissions": []
+}
