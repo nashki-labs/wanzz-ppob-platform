@@ -149,7 +149,7 @@ Choose the scenario that matches your needs. Each guide is self-contained and st
 
 1.  **Clone the Project**:
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/nashki-labs/wanzz-ppob-platform.git
     cd wanzz-ppob-platform
     ```
 2.  **Environment Preparation**:
@@ -186,7 +186,7 @@ Choose the scenario that matches your needs. Each guide is self-contained and st
     - SSH into your server: `ssh root@your-vps-ip`
 2.  **Clone the Project on the VPS**:
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/nashki-labs/wanzz-ppob-platform.git
     cd wanzz-ppob-platform
     ```
 3.  **Configure Environment**:
@@ -216,7 +216,7 @@ Choose the scenario that matches your needs. Each guide is self-contained and st
 1.  **Prepare Locally**:
     - Clone the project to your computer:
       ```bash
-      git clone <your-repository-url>
+      git clone https://github.com/nashki-labs/wanzz-ppob-platform.git
       cd wanzz-ppob-platform
       ```
 2.  **Local Configuration**:
