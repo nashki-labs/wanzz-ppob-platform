@@ -319,78 +319,82 @@ const AdminDashboard: React.FC = () => {
 
       {activeAdminTab === 'transactions' && (
         <div className="glass-card rounded-[2rem] border border-slate-800 overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-950/50 border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Waktu</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Produk & Harga</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">User & Target</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {transactions.length === 0 ? (
-                <tr><td colSpan={4} className="p-20 text-center text-slate-600 italic">Belum ada riwayat transaksi.</td></tr>
-              ) : (
-                transactions.map((t, i) => (
-                  <tr key={i} className="text-xs hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 text-[10px] text-slate-500">{new Date(t.created_at).toLocaleString('id-ID')}</td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold">{t.product_name}</p>
-                      <p className="text-blue-500 font-black">Rp {t.price?.toLocaleString('id-ID')}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-slate-200">{t.user_name}</p>
-                      <p className="text-slate-500 font-mono text-[10px]">{t.target}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded uppercase font-black text-[9px] ${t.status === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                        }`}>
-                        {t.status?.toUpperCase()}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-slate-950/50 border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Waktu</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Produk & Harga</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">User & Target</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {transactions.length === 0 ? (
+                  <tr><td colSpan={4} className="p-20 text-center text-slate-600 italic">Belum ada riwayat transaksi.</td></tr>
+                ) : (
+                  transactions.map((t, i) => (
+                    <tr key={i} className="text-xs hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-[10px] text-slate-500">{new Date(t.created_at).toLocaleString('id-ID')}</td>
+                      <td className="px-6 py-4">
+                        <p className="font-bold">{t.product_name}</p>
+                        <p className="text-blue-500 font-black">Rp {t.price?.toLocaleString('id-ID')}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-slate-200">{t.user_name}</p>
+                        <p className="text-slate-500 font-mono text-[10px]">{t.target}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded uppercase font-black text-[9px] ${t.status === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                          }`}>
+                          {t.status?.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {activeAdminTab === 'deposits' && (
         <div className="glass-card rounded-[2rem] border border-slate-800 overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-950/50 border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Waktu</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">User</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Nominal</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Metode</th>
-                <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {deposits.length === 0 ? (
-                <tr><td colSpan={5} className="p-20 text-center text-slate-600 italic">Belum ada riwayat deposit.</td></tr>
-              ) : (
-                deposits.map((d, i) => (
-                  <tr key={i} className="text-xs hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 text-[10px] text-slate-500">{new Date(d.created_at).toLocaleString('id-ID')}</td>
-                    <td className="px-6 py-4 text-slate-200">{d.user_name}</td>
-                    <td className="px-6 py-4 font-black text-blue-400">Rp {d.nominal?.toLocaleString('id-ID')}</td>
-                    <td className="px-6 py-4 text-slate-400">{d.method}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded uppercase font-black text-[9px] ${d.status === 'success' ? 'bg-green-500/10 text-green-500' :
-                        d.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'
-                        }`}>
-                        {d.status?.toUpperCase()}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-slate-950/50 border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Waktu</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">User</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Nominal</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Metode</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {deposits.length === 0 ? (
+                  <tr><td colSpan={5} className="p-20 text-center text-slate-600 italic">Belum ada riwayat deposit.</td></tr>
+                ) : (
+                  deposits.map((d, i) => (
+                    <tr key={i} className="text-xs hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-[10px] text-slate-500">{new Date(d.created_at).toLocaleString('id-ID')}</td>
+                      <td className="px-6 py-4 text-slate-200">{d.user_name}</td>
+                      <td className="px-6 py-4 font-black text-blue-400">Rp {d.nominal?.toLocaleString('id-ID')}</td>
+                      <td className="px-6 py-4 text-slate-400">{d.method}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded uppercase font-black text-[9px] ${d.status === 'success' ? 'bg-green-500/10 text-green-500' :
+                          d.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'
+                          }`}>
+                          {d.status?.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

@@ -23,6 +23,7 @@ COPY --from=builder /app/dist ./dist
 COPY server.js .
 COPY database.js .
 COPY routes/ ./routes/
+COPY services/ ./services/
 COPY utils/ ./utils/
 
 # Create data directory for SQLite

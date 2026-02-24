@@ -222,7 +222,7 @@ const DepositPage: React.FC<DepositPageProps> = ({ user, onRefreshUser }) => {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="glass-card p-8 rounded-[2.5rem] border border-slate-800 sticky top-24 shadow-2xl">
+          <div className="glass-card p-8 rounded-[2.5rem] border border-slate-800 lg:sticky lg:top-24 shadow-2xl">
             {!isChangingMethod && (
               <div className="space-y-6">
                 <div className="flex items-center gap-4 mb-2">

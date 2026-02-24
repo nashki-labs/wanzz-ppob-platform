@@ -124,7 +124,7 @@ const Home: React.FC = () => {
                   <div className="flex justify-between items-end mt-6">
                     <div>
                       <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-1">Mulai Dari</p>
-                      <p className="text-lg font-black text-white">Rp {p.price.toLocaleString('id-ID')}</p>
+                      <p className="text-base md:text-lg font-black text-white">Rp {p.price.toLocaleString('id-ID')}</p>
                     </div>
                     <button
                       onClick={() => navigate(`/category/${p.category || 'All'}`)}

@@ -13,7 +13,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +27,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
     try {
       const body = mode === 'login'
         ? { email, password }
-        : { name, email, phone, password };
+        : { name, email, password };
 
       const data = mode === 'login'
         ? await api.auth.login(body)
@@ -96,16 +95,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
                   />
                 </div>
 
-                {mode === 'register' && (
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nomor Handphone</label>
-                    <input
-                      type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-5 py-3.5 focus:border-blue-500 outline-none text-xs transition-all"
-                      placeholder="0812xxxxxx"
-                    />
-                  </div>
-                )}
+
 
                 <div className="space-y-1">
                   <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Password</label>
