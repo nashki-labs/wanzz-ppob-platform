@@ -4,12 +4,12 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 // Import Routes
-import authRoutes from './routes/auth.js';
-import transactionRoutes from './routes/transaction.js';
-import adminRoutes from './routes/admin.js';
-import callbackRoutes from './routes/callback.js';
-import chatRoutes from './routes/chat.js';
-import pterodactylRoutes from './routes/pterodactyl.js';
+import authRoutes from './routes/auth.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import callbackRoutes from './routes/callback.routes.js';
+import chatRoutes from './routes/chat.routes.js';
+import pterodactylRoutes from './routes/pterodactyl.routes.js';
 
 // Import Utils & DB
 import { getSetting } from './database.js';

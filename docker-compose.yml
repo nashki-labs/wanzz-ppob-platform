@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     volumes:
-      - wanzz-data:/app/data
+      - wanzz-data:/app/server/data
     restart: always
     logging:
       driver: "json-file"

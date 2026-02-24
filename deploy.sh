@@ -43,7 +43,14 @@ ssh $SSH_OPTS $VPS_USER@$VPS_IP "mkdir -p $DEST_DIR"
 
 # Step 1: Transfer files
 echo "📤 Transferring files..."
-rsync -avz -e "ssh $SSH_OPTS" --exclude 'node_modules' --exclude '.git' --exclude 'dist' ./ $VPS_USER@$VPS_IP:$DEST_DIR
+rsync -avz -e "ssh $SSH_OPTS" \
+    --exclude 'node_modules' \
+    --exclude 'client/node_modules' \
+    --exclude 'server/node_modules' \
+    --exclude '.git' \
+    --exclude 'dist' \
+    --exclude 'server/dist' \
+    ./ $VPS_USER@$VPS_IP:$DEST_DIR
 
 # Step 2: Run Docker Compose on VPS
 echo "🐳 Building and starting containers on VPS..."

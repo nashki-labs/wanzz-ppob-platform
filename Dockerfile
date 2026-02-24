@@ -1,10 +1,15 @@
-# -- Build Stage --
+# -- Build Stage (Frontend) --
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+
+# Copy client package files and install dependencies
+COPY client/package*.json ./client/
+RUN cd client && npm ci
+
+# Copy client source and build
+COPY client/ ./client/
+# Note: vite.config.ts is configured to output to ../server/dist
+RUN cd client && npm run build
 
 # -- Production Stage --
 FROM node:20-alpine AS production
@@ -13,23 +18,27 @@ WORKDIR /app
 # Install native build tools for better-sqlite3
 RUN apk add --no-cache python3 make g++
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Install server dependencies
+COPY server/package*.json ./server/
+RUN cd server && npm ci --omit=dev
 
-# Copy built frontend
-COPY --from=builder /app/dist ./dist
+# Copy built frontend from builder to server/dist
+COPY --from=builder /app/server/dist ./server/dist
 
-# Copy server files
-COPY server.js .
-COPY database.js .
-COPY routes/ ./routes/
-COPY services/ ./services/
-COPY utils/ ./utils/
+# Copy remaining server files
+COPY server/ ./server/
 
 # Create data directory for SQLite
-RUN mkdir -p /app/data
+RUN mkdir -p /app/server/data
 
 EXPOSE 3000
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Run from server directory
+WORKDIR /app/server
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
