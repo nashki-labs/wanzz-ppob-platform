@@ -14,6 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin }) => {
 
   const menuItems = [
     { id: 'home', path: '/', icon: 'fa-house-chimney', label: 'Dashboard' },
+    { id: 'pterodactyl', path: '/pterodactyl', icon: 'fa-server', label: 'Panel Hosting' },
     { id: 'price-list', path: '/price-list', icon: 'fa-tags', label: 'Daftar Harga' },
     { id: 'deposit', path: '/deposit', icon: 'fa-wallet', label: 'Isi Saldo' },
     { id: 'profile', path: '/profile', icon: 'fa-user-circle', label: 'Akun Saya' }

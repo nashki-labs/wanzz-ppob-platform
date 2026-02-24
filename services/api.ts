@@ -68,6 +68,15 @@ export const api = {
         updateDepositMethod: (method: string) => request<any>('/admin/settings/deposit-method', { method: 'POST', body: JSON.stringify({ method }) }),
         updateProfitMargin: (percent: number) => request<any>('/admin/settings/profit-margin', { method: 'POST', body: JSON.stringify({ percent }) }),
         getMessageHistory: (userId: string) => request<any>(`/admin/messages/${userId}`),
+        getPteroSettings: () => request<any>('/admin/ptero-settings'),
+        updatePteroSettings: (body: any) => request<any>('/admin/ptero-settings', { method: 'POST', body: JSON.stringify(body) }),
+    },
+    pterodactyl: {
+        getPackages: () => request<any>('/pterodactyl/packages'),
+        getEggs: () => request<any>('/pterodactyl/eggs'),
+        purchase: (body: any) => request<any>('/pterodactyl/purchase', { method: 'POST', body: JSON.stringify(body) }),
+        getMyPanels: () => request<any>('/pterodactyl/my-panels'),
+        getPanel: (id: string) => request<any>(`/pterodactyl/panel/${id}`),
     },
     system: {
         getMaintenance: () => request<any>('/settings/maintenance'),

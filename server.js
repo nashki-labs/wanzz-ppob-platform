@@ -9,6 +9,7 @@ import transactionRoutes from './routes/transaction.js';
 import adminRoutes from './routes/admin.js';
 import callbackRoutes from './routes/callback.js';
 import chatRoutes from './routes/chat.js';
+import pterodactylRoutes from './routes/pterodactyl.js';
 
 // Import Utils & DB
 import { getSetting } from './database.js';
@@ -62,6 +63,7 @@ app.use('/api/transaction', transactionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/callback', callbackRoutes);
 app.use('/api/messages', chatRoutes);
+app.use('/api/pterodactyl', pterodactylRoutes);
 
 // Shared/Legacy Redirects (pointing to transaction routes)
 app.get('/api/products', (req, res, next) => { req.url = '/products'; next(); }, transactionRoutes);

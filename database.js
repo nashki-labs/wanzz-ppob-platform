@@ -87,6 +87,21 @@ db.exec(`
   INSERT OR IGNORE INTO settings (key, value) VALUES ('active_deposit_method', 'ciaatopup');
   INSERT OR IGNORE INTO settings (key, value) VALUES ('profit_percent', '5');
 
+  -- Initial Pterodactyl dynamic packages
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('ptero_packages', '{
+    \"1gb\":  {\"memo\": 1024,  \"cpu\": 30,  \"disk\": 1024,  \"price\": 5000,  \"label\": \"1 GB\"},
+    \"2gb\":  {\"memo\": 2048,  \"cpu\": 60,  \"disk\": 2048,  \"price\": 8000,  \"label\": \"2 GB\"},
+    \"3gb\":  {\"memo\": 3072,  \"cpu\": 90,  \"disk\": 3072,  \"price\": 12000, \"label\": \"3 GB\"},
+    \"4gb\":  {\"memo\": 4096,  \"cpu\": 120, \"disk\": 4096,  \"price\": 15000, \"label\": \"4 GB\"},
+    \"5gb\":  {\"memo\": 5120,  \"cpu\": 150, \"disk\": 5120,  \"price\": 18000, \"label\": \"5 GB\"},
+    \"6gb\":  {\"memo\": 6144,  \"cpu\": 180, \"disk\": 6144,  \"price\": 22000, \"label\": \"6 GB\"},
+    \"7gb\":  {\"memo\": 7168,  \"cpu\": 210, \"disk\": 7168,  \"price\": 25000, \"label\": \"7 GB\"},
+    \"8gb\":  {\"memo\": 8192,  \"cpu\": 240, \"disk\": 8192,  \"price\": 28000, \"label\": \"8 GB\"},
+    \"9gb\":  {\"memo\": 9216,  \"cpu\": 270, \"disk\": 9216,  \"price\": 32000, \"label\": \"9 GB\"},
+    \"10gb\": {\"memo\": 10240, \"cpu\": 300, \"disk\": 10240, \"price\": 35000, \"label\": \"10 GB\"},
+    \"unli\": {\"memo\": 0,     \"cpu\": 0,   \"disk\": 0,     \"price\": 50000, \"label\": \"Unlimited\"}
+  }');
+
   CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -104,6 +119,29 @@ db.exec(`
     new_value TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS pterodactyl_panels (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_name TEXT,
+    package_id TEXT NOT NULL,
+    panel_username TEXT,
+    panel_email TEXT,
+    panel_password TEXT,
+    ptero_user_id INTEGER,
+    ptero_server_id INTEGER,
+    egg_id INTEGER,
+    egg_name TEXT,
+    server_name TEXT,
+    memory INTEGER,
+    disk INTEGER,
+    cpu INTEGER,
+    price REAL,
+    status TEXT DEFAULT 'pending',
+    domain TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 // --- Migrations (Defensive) ---
@@ -119,14 +157,19 @@ try {
 // SEED ADMIN USER
 // ============================
 function seedAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@wanzz.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!';
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
+  if (!adminEmail || !adminPassword) {
+    console.warn('⚠️ [DB] ADMIN_EMAIL or ADMIN_PASSWORD not set in .env. Skipping admin seeding.');
+    return;
+  }
+
+  const existing = db.prepare('SELECT id FROM users WHERE email = ? OR id = ? OR api_key = ?').get(adminEmail, 'admin-01', 'ADMIN-ACCESS-SECRET');
   if (!existing) {
     const hash = bcrypt.hashSync(adminPassword, 10);
     db.prepare(`
-      INSERT INTO users (id, name, email, password_hash, role, balance, photo_url, api_key)
+      INSERT OR IGNORE INTO users (id, name, email, password_hash, role, balance, photo_url, api_key)
       VALUES (?, ?, ?, ?, 'admin', 99999999, ?, ?)
     `).run(
       'admin-01',

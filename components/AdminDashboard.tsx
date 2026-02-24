@@ -13,11 +13,13 @@ const AdminDashboard: React.FC = () => {
 
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [activeDepositMethod, setActiveDepositMethod] = useState('ciaatopup');
-  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'transactions' | 'deposits' | 'api-products' | 'api-methods' | 'gateway' | 'settings'>('users');
+  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'transactions' | 'deposits' | 'api-products' | 'api-methods' | 'gateway' | 'settings' | 'pterodactyl'>('users');
   const [isLoading, setIsLoading] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [profitMargin, setProfitMargin] = useState<number | string>(0);
+  const [pteroSettings, setPteroSettings] = useState<any>({ domain: '', apiKey: '', packages: null });
+  const [pteroJson, setPteroJson] = useState('');
 
   useEffect(() => {
     // Load data from server API
@@ -25,6 +27,9 @@ const AdminDashboard: React.FC = () => {
 
     if (activeAdminTab === 'api-products' || activeAdminTab === 'api-methods') {
       fetchApiData();
+    }
+    if (activeAdminTab === 'pterodactyl') {
+      fetchPteroSettings();
     }
   }, [activeAdminTab]);
 
@@ -141,6 +146,94 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchPteroSettings = async () => {
+    setIsLoading(true);
+    try {
+      const resp = await api.admin.getPteroSettings();
+      if (resp.status === 'success') {
+        setPteroSettings(resp.data);
+        // Convert packages object to array for easy editing
+        if (resp.data.packages) {
+          const pkgArray = Object.entries(resp.data.packages).map(([key, val]: [string, any]) => ({
+            id: key,
+            label: val.label || key,
+            price: val.price || 0,
+            memo: val.memo || 0,
+            cpu: val.cpu || 0,
+            disk: val.disk || 0,
+          }));
+          setPteroJson(JSON.stringify(pkgArray));
+        }
+      }
+    } catch (err) {
+      console.error('Gagal fetch ptero settings:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePkgFieldChange = (pkgId: string, field: string, value: string) => {
+    if (!pteroSettings.packages) return;
+    const updated = { ...pteroSettings.packages };
+    if (updated[pkgId]) {
+      updated[pkgId] = { ...updated[pkgId], [field]: field === 'label' ? value : Number(value) || 0 };
+      setPteroSettings({ ...pteroSettings, packages: updated });
+    }
+  };
+
+  const handleAddPackage = () => {
+    const newId = prompt('Masukkan ID paket baru (contoh: 12gb, custom1):');
+    if (!newId || newId.trim() === '') return;
+    const id = newId.trim().toLowerCase().replace(/\s+/g, '');
+
+    const existing = pteroSettings.packages || {};
+    if (existing[id]) {
+      alert(`Paket "${id}" sudah ada!`);
+      return;
+    }
+
+    const updated = {
+      ...existing,
+      [id]: { memo: 1024, cpu: 30, disk: 1024, price: 5000, label: id.toUpperCase() }
+    };
+    setPteroSettings({ ...pteroSettings, packages: updated });
+  };
+
+  const handleDeletePackage = (pkgId: string) => {
+    if (!confirm(`Hapus paket "${pkgId}"? Pastikan tidak ada user yang sudah pakai paket ini.`)) return;
+    const updated = { ...pteroSettings.packages };
+    delete updated[pkgId];
+    setPteroSettings({ ...pteroSettings, packages: updated });
+  };
+
+  const handleSaveConnection = async () => {
+    try {
+      const resp = await api.admin.updatePteroSettings({
+        domain: pteroSettings.domain,
+        apiKey: pteroSettings.apiKey,
+      });
+      if (resp.status === 'success') {
+        alert('Koneksi panel berhasil disimpan!');
+      }
+    } catch (err: any) {
+      alert(`Gagal simpan koneksi: ${err.message}`);
+    }
+  };
+
+  const handleSavePackages = async () => {
+    try {
+      const resp = await api.admin.updatePteroSettings({
+        packages: pteroSettings.packages
+      });
+      if (resp.status === 'success') {
+        alert('Daftar harga paket berhasil disimpan!');
+        fetchPteroSettings();
+      }
+    } catch (err: any) {
+      alert(`Gagal simpan paket: ${err.message}`);
+    }
+  };
+
   const filteredProducts = apiProducts.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
     p.provider.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -154,24 +247,27 @@ const AdminDashboard: React.FC = () => {
           <h1 className="text-3xl font-black uppercase tracking-tighter">Admin Control Center</h1>
           <p className="text-slate-500 text-xs">Pusat manajemen data Wanzz PPOB & Monitoring API.</p>
         </div>
-        <div className="flex flex-wrap gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
-          {[
-            { id: 'users', label: 'User' },
-            { id: 'transactions', label: 'Transaksi' },
-            { id: 'deposits', label: 'Deposit' },
-            { id: 'api-products', label: 'Produk API' },
-            { id: 'api-methods', label: 'Metode API' },
-            { id: 'gateway', label: 'Gateway' },
-            { id: 'settings', label: 'Sistem' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveAdminTab(tab.id as any)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeAdminTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="w-full lg:w-auto overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex flex-nowrap lg:flex-wrap gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 w-max lg:w-auto mt-2 md:mt-0">
+            {[
+              { id: 'users', label: 'User' },
+              { id: 'transactions', label: 'Transaksi' },
+              { id: 'deposits', label: 'Deposit' },
+              { id: 'api-products', label: 'Produk API' },
+              { id: 'api-methods', label: 'Metode API' },
+              { id: 'gateway', label: 'Gateway' },
+              { id: 'settings', label: 'Sistem' },
+              { id: 'pterodactyl', label: 'Pterodactyl' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveAdminTab(tab.id as any)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeAdminTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -180,8 +276,8 @@ const AdminDashboard: React.FC = () => {
           <div className="px-8 py-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
             <h3 className="font-black text-xs uppercase tracking-widest">Daftar Pengguna ({users.length})</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full text-left min-w-[700px]">
               <thead className="bg-slate-950/50 border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">User Info</th>
@@ -312,14 +408,14 @@ const AdminDashboard: React.FC = () => {
               <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 text-[10px]"></i>
             </div>
           </div>
-          <div className="overflow-x-auto max-h-[600px]">
+          <div className="overflow-x-auto no-scrollbar max-h-[600px]">
             {isLoading ? (
               <div className="p-20 text-center flex flex-col items-center gap-4">
                 <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Fetching Live Data...</p>
               </div>
             ) : (
-              <table className="w-full text-left">
+              <table className="w-full text-left min-w-[900px]">
                 <thead className="bg-slate-950/50 border-b border-slate-800 sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">SKU / Code</th>
@@ -506,6 +602,164 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {activeAdminTab === 'pterodactyl' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Connection Settings */}
+          <div className="glass-card p-8 rounded-[2rem] border border-slate-800 space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 text-xl">
+                <i className="fas fa-server"></i>
+              </div>
+              <div>
+                <h3 className="font-black uppercase text-base tracking-tight">Koneksi Panel</h3>
+                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">Domain dan API Key panel Pterodactyl.</p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Domain Panel</label>
+                <input
+                  type="text"
+                  value={pteroSettings.domain}
+                  onChange={(e) => setPteroSettings({ ...pteroSettings, domain: e.target.value })}
+                  placeholder="https://panel.example.com"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1">Application API Key</label>
+                <input
+                  type="password"
+                  value={pteroSettings.apiKey}
+                  onChange={(e) => setPteroSettings({ ...pteroSettings, apiKey: e.target.value })}
+                  placeholder="ptla_xxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-white font-bold text-sm focus:border-blue-500 outline-none transition-all font-mono"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={handleSaveConnection}
+                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
+              >
+                <i className="fas fa-plug mr-2"></i>
+                Simpan Koneksi
+              </button>
+            </div>
+          </div>
+
+          {/* Package Pricing Table */}
+          <div className="glass-card rounded-[2rem] border border-slate-800 overflow-hidden">
+            <div className="px-8 py-5 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <i className="fas fa-tags text-blue-500"></i>
+                <h3 className="font-black text-xs uppercase tracking-widest">Daftar Harga Paket ({pteroSettings.packages ? Object.keys(pteroSettings.packages).length : 0})</h3>
+              </div>
+              <button
+                onClick={handleAddPackage}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+              >
+                <i className="fas fa-plus text-[8px]"></i>
+                Tambah Paket
+              </button>
+            </div>
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full text-left min-w-[900px]">
+                <thead className="bg-slate-950/50 border-b border-slate-800">
+                  <tr>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Paket ID</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase">Label</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase text-right">Harga (Rp)</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase text-right">RAM (MB)</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase text-right">CPU (%)</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase text-right">Disk (MB)</th>
+                    <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {pteroSettings.packages && Object.entries(pteroSettings.packages).map(([pkgId, pkg]: [string, any]) => (
+                    <tr key={pkgId} className="hover:bg-white/5 transition-colors group">
+                      <td className="px-6 py-3">
+                        <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg uppercase tracking-wider">{pkgId}</span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <input
+                          type="text"
+                          value={pkg.label || ''}
+                          onChange={(e) => handlePkgFieldChange(pkgId, 'label', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 outline-none text-white text-xs font-bold py-1 px-1 w-24 transition-all"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <input
+                          type="number"
+                          value={pkg.price || 0}
+                          onChange={(e) => handlePkgFieldChange(pkgId, 'price', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 outline-none text-green-400 text-xs font-black py-1 px-1 w-24 text-right transition-all"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <input
+                          type="number"
+                          value={pkg.memo || 0}
+                          onChange={(e) => handlePkgFieldChange(pkgId, 'memo', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 outline-none text-slate-300 text-xs font-bold py-1 px-1 w-20 text-right transition-all"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <input
+                          type="number"
+                          value={pkg.cpu || 0}
+                          onChange={(e) => handlePkgFieldChange(pkgId, 'cpu', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 outline-none text-slate-300 text-xs font-bold py-1 px-1 w-20 text-right transition-all"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <input
+                          type="number"
+                          value={pkg.disk || 0}
+                          onChange={(e) => handlePkgFieldChange(pkgId, 'disk', e.target.value)}
+                          className="bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 outline-none text-slate-300 text-xs font-bold py-1 px-1 w-20 text-right transition-all"
+                        />
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <button
+                          onClick={() => handleDeletePackage(pkgId)}
+                          className="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 text-[10px]"
+                          title={`Hapus paket ${pkgId}`}
+                        >
+                          <i className="fas fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!pteroSettings.packages || Object.keys(pteroSettings.packages).length === 0) && (
+                    <tr>
+                      <td colSpan={7} className="p-12 text-center text-slate-600 text-xs">
+                        <i className="fas fa-box-open text-2xl mb-3 block text-slate-700"></i>
+                        Belum ada paket. Klik <b>"Tambah Paket"</b> di atas untuk mulai.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleSavePackages}
+              className="px-12 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 transition-all active:scale-95"
+            >
+              <i className="fas fa-save mr-2"></i>
+              Simpan Harga Paket
+            </button>
+          </div>
+        </div>
+      )}
+
+
 
     </div>
   );

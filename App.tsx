@@ -13,6 +13,7 @@ import ChatWidget from './components/ChatWidget';
 import { User } from './types';
 import { api } from './services/api';
 import ProfilePage from './pages/ProfilePage';
+import PterodactylPage from './pages/PterodactylPage';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -91,6 +92,7 @@ const App: React.FC = () => {
                 <Route path="/category/:categoryName" element={<CategoryPageWrapper user={user} refreshUser={refreshUser} />} />
                 <Route path="/price-list" element={<PriceListPage />} />
                 <Route path="/deposit" element={<DepositPage user={user} onRefreshUser={refreshUser} />} />
+                <Route path="/pterodactyl" element={<PterodactylPage user={user} refreshUser={refreshUser} />} />
                 <Route path="/profile" element={
                   user ? (
                     <ProfilePage

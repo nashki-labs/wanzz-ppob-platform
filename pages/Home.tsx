@@ -62,7 +62,13 @@ const Home: React.FC = () => {
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => navigate(`/category/${cat.id}`)}
+              onClick={() => {
+                if (cat.id === 'Pterodactyl') {
+                  navigate('/pterodactyl');
+                } else {
+                  navigate(`/category/${cat.id}`);
+                }
+              }}
               className="glass-card p-4 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-800 hover:border-blue-500 transition-all flex flex-col items-center group"
             >
               <div className="w-10 h-10 md:w-16 md:h-16 bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform border border-slate-800">

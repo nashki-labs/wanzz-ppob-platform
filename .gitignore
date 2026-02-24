@@ -28,6 +28,8 @@ desktop.ini
 *.sqlite3
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 
 # Environment variables
 .env
@@ -51,3 +53,7 @@ desktop.ini
 # Varia
 .vercel
 .turbo
+
+temp_sc_external_for_intregation
+test
+referensi

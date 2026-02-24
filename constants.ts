@@ -11,5 +11,6 @@ export const CATEGORIES = [
   { id: 'Data', icon: 'fa-wifi', label: 'Internet Data' },
   { id: 'PLN', icon: 'fa-bolt', label: 'Token Listrik' },
   { id: 'Voucher', icon: 'fa-ticket', label: 'Vouchers' },
-  { id: 'E-Wallet', icon: 'fa-wallet', label: 'E-Wallet' }
+  { id: 'E-Wallet', icon: 'fa-wallet', label: 'E-Wallet' },
+  { id: 'Pterodactyl', icon: 'fa-server', label: 'Panel Hosting' },
 ];

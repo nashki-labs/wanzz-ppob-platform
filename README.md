@@ -25,6 +25,7 @@
 ### Key Capabilities
 - **Automated PPOB**: Real-time product fetching and purchasing.
 - **Dual-Gateway Engine**: Separate logic for Top-Up and Payment processing.
+- **Pterodactyl Panel Hosting**: Purchase and auto-provision Pterodactyl game panels directly from the web.
 - **Admin Command Center**: Complete control over users, transactions, and system settings.
 - **Smart Notifications**: Instant alerts via Telegram for high-value events.
 
@@ -71,6 +72,7 @@ graph TD
     subgraph "External Integration"
         Backend <--> CIAA[CIAA Top-Up Gateway]
         Backend <--> Pakasir[Pakasir Payment Gateway]
+        Backend <--> Pterodactyl[Pterodactyl Panel API]
     end
 ```
 
@@ -104,6 +106,10 @@ Configured in `vite.config.ts`, the proxy allows the frontend to use relative pa
 | | `/api/transaction/create` | POST | Initiates a balance-checked purchase. |
 | **Deposit** | `/api/deposit/create` | POST | Creates a payment invoice via Pakasir. |
 | | `/api/deposit/sync` | GET | Forces a status update call to the gateway. |
+| **Pterodactyl** | `/api/pterodactyl/packages` | GET | List all available panel hosting packages. |
+| | `/api/pterodactyl/purchase` | POST | Purchase a panel (deducts balance, creates user+server). |
+| | `/api/pterodactyl/my-panels` | GET | Get all panels owned by the authenticated user. |
+| | `/api/pterodactyl/panel/:id` | GET | Get detail of a specific panel. |
 | **Admin** | `/api/admin/users` | GET | List and modify user data. |
 | | `/api/admin/settings` | POST | Toggle Maintenance Mode or Profit Margins. |
 
@@ -130,6 +136,14 @@ Before running the application, you **must** create a `.env` file in the root di
 ### Telegram Integration (Admin Alerts)
 - `TELEGRAM_BOT_TOKEN`: The token from @BotFather for your alert bot.
 - `ADMIN_CHAT_ID`: Your personal Telegram Chat ID to receive system notifications.
+
+### Pterodactyl Panel Integration
+- `PTERO_DOMAIN`: The URL of your Pterodactyl panel (e.g., `https://panel.example.com`).
+- `PTERO_PLTA_API_KEY`: Application API key from Pterodactyl (starts with `ptla_`). Used for creating users and servers.
+- `PTERO_PLTC_API_KEY`: Client API key from Pterodactyl (starts with `ptlc_`). Reserved for future client-level operations.
+- `PTERO_EGG_ID`: The Egg ID to use for server creation (default: `5`).
+- `PTERO_LOCATION_ID`: The Location ID for server deployment (default: `1`).
+- `PTERO_DOCKER_IMAGE`: Docker image for server containers (default: `ghcr.io/parkervcp/yolks:nodejs_18`).
 
 ### Default Admin Setup
 These credentials are used to create the initial admin account when the database is first initialized:

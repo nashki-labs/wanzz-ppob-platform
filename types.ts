@@ -61,3 +61,43 @@ export interface Deposit {
   method?: string;
   gateway_response?: string;
 }
+
+export interface PanelPackage {
+  id: string;
+  label: string;
+  memory: number;
+  cpu: number;
+  disk: number;
+  price: number;
+}
+
+export interface PterodactylPanel {
+  id: string;
+  package_id: string;
+  panel_username: string;
+  panel_email: string;
+  panel_password: string;
+  server_name: string;
+  memory: number;
+  disk: number;
+  cpu: number;
+  price: number;
+  status: 'pending' | 'success' | 'failed';
+  domain: string;
+  created_at: string;
+}
+
+export interface PterodactylEgg {
+  id: number;
+  name: string;
+  description: string;
+  docker_image: string;
+}
+
+export interface PterodactylNest {
+  id: number;
+  name: string;
+  description: string;
+  eggs: PterodactylEgg[];
+}
+

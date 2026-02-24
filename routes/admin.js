@@ -1,5 +1,5 @@
 import express from 'express';
-import {
+import db, {
     getAllUsers, getAllTransactions, getAllDeposits,
     getSetting, setSetting, getUserMessages
 } from '../database.js';
@@ -74,6 +74,39 @@ router.post('/settings/profit-margin', (req, res) => {
 
     console.log(`🔧 [ADMIN] Global profit margin changed to: ${nPercent}%`);
     res.json({ status: 'success', percent: nPercent });
+});
+
+// Pterodactyl Advanced Settings
+router.get('/ptero-settings', (req, res) => {
+    const packages = getSetting('ptero_packages') ? JSON.parse(getSetting('ptero_packages')) : null;
+    const domain = getSetting('ptero_domain') || process.env.PTERO_DOMAIN || '';
+    const apiKey = getSetting('ptero_api_key') || process.env.PTERO_PLTA_API_KEY || '';
+
+    res.json({
+        status: 'success',
+        data: {
+            packages,
+            domain,
+            apiKey
+        }
+    });
+});
+
+router.post('/ptero-settings', (req, res) => {
+    const { packages, domain, apiKey } = req.body;
+
+    if (packages) {
+        setSetting('ptero_packages', JSON.stringify(packages));
+    }
+    if (domain) {
+        setSetting('ptero_domain', domain);
+    }
+    if (apiKey) {
+        setSetting('ptero_api_key', apiKey);
+    }
+
+    console.log(`🔧 [ADMIN] Pterodactyl settings updated by ${req.user.name}`);
+    res.json({ status: 'success', message: 'Pengaturan Pterodactyl berhasil diperbarui.' });
 });
 
 // Chat Management
