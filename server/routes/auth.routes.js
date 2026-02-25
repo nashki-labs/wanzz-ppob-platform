@@ -32,6 +32,7 @@ router.post('/login',
 );
 
 router.get('/me', authenticateToken, AuthController.getMe);
+router.post('/refresh', AuthController.refreshTokenHandler);
 router.get('/history', authenticateToken, AuthController.getHistory);
 
 router.post('/update', authenticateToken, [

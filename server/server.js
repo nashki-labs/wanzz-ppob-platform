@@ -1,7 +1,15 @@
 import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from project root
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Import Routes
 import authRoutes from './routes/auth.routes.js';
@@ -14,16 +22,27 @@ import pterodactylRoutes from './routes/pterodactyl.routes.js';
 // Import Utils & DB
 import { getSetting } from './database.js';
 
-dotenv.config();
+// Redundant dotenv removed
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// (Moved above for dotenv)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
-app.use(express.json());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+      "img-src": ["'self'", "data:", "files.catbox.moe", "v.pakasir.com", "ui-avatars.com", "api.qrserver.com"],
+      "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
+      "font-src": ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"]
+    },
+  },
+}));
+app.use(cors());
+app.use(express.json({ limit: '10kb' }));
 
 // ============================
 // MIDDLEWARE: Logger
@@ -34,7 +53,7 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     if (!req.url.startsWith('/assets') && !req.url.endsWith('.js') && !req.url.endsWith('.css')) {
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms) - IP: ${ip}`);
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms) - IP: ${ip} `);
     }
   });
   next();
@@ -69,7 +88,7 @@ app.use('/api/pterodactyl', pterodactylRoutes);
 app.get('/api/products', (req, res, next) => { req.url = '/products'; next(); }, transactionRoutes);
 app.get('/api/deposit-methods', (req, res, next) => { req.url = '/deposit-methods'; next(); }, transactionRoutes);
 app.post('/api/deposit/create', (req, res, next) => { req.url = '/deposit/create'; next(); }, transactionRoutes);
-app.get('/api/deposit/:id/sync', (req, res, next) => { req.url = `/deposit/${req.params.id}/sync`; next(); }, transactionRoutes);
+app.get('/api/deposit/:id/sync', (req, res, next) => { req.url = `/ deposit / ${req.params.id}/sync`; next(); }, transactionRoutes);
 app.post('/api/deposit/cancel', (req, res, next) => { req.url = '/deposit/cancel'; next(); }, transactionRoutes);
 app.post('/api/transaction/create', (req, res, next) => { req.url = '/transaction/create'; next(); }, transactionRoutes);
 

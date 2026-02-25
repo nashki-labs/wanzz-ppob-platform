@@ -1,6 +1,8 @@
 import db, {
     getUserBalance, deductBalance, addBalance, runInTransaction,
 } from '../database.js';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import * as PterodactylService from '../services/pterodactyl.service.js';
 import { sendTelegram } from '../utils/telegram.js';
 
@@ -78,19 +80,18 @@ export const purchase = async (req, res) => {
     }
 
     const price = pkg.price;
-    const panelId = `panel-${Date.now()}`;
+    const panelId = crypto.randomUUID();
     const baseName = (user.name || 'user').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 8);
     const suffix = Date.now().toString(36).slice(-4);
     const panelUsername = `${baseName}${suffix}`;
     const serverName = `${panelUsername}-${package_id}`;
 
     try {
-        const currentBalance = getUserBalance(user.id);
-        if (currentBalance < price) {
-            return res.status(400).json({ status: 'error', message: `Saldo tidak cukup. Dibutuhkan Rp ${price.toLocaleString('id-ID')}.` });
-        }
-
         runInTransaction(() => {
+            const currentBalance = getUserBalance(user.id);
+            if (currentBalance < price) {
+                throw new Error('SALDO_NOT_ENOUGH');
+            }
             const deducted = deductBalance(user.id, price);
             if (deducted.changes === 0) {
                 throw new Error('SALDO_NOT_ENOUGH');
@@ -127,7 +128,7 @@ export const purchase = async (req, res) => {
                 pteroUser._password = existingPanel.panel_password;
             } else {
                 const config = PterodactylService.getPteroConfig();
-                const newPassword = `${panelUsername}${Date.now().toString(36)}`;
+                const newPassword = crypto.randomBytes(16).toString('hex');
                 try {
                     const updateUrl = `${config.domain}/api/application/users/${pteroUser.id}`;
                     await fetch(updateUrl, {
@@ -164,6 +165,9 @@ export const purchase = async (req, res) => {
             return res.status(500).json({ status: 'error', message: `Gagal membuat server panel: ${apiErr.message}` });
         }
 
+        const passwordForResponse = pteroUser._password;
+        const passwordHash = bcrypt.hashSync(pteroUser._password, 10);
+
         db.prepare(`
             UPDATE pterodactyl_panels 
             SET status = 'success',
@@ -179,7 +183,7 @@ export const purchase = async (req, res) => {
         `).run(
             pteroUser.username,
             pteroUser._email,
-            pteroUser._password,
+            passwordHash,
             pteroUser.id,
             pteroServer.id,
             pteroServer.limits.memory,
@@ -204,7 +208,7 @@ export const purchase = async (req, res) => {
                 id: panelId,
                 panel_username: panelUsername,
                 panel_email: pteroUser._email,
-                panel_password: pteroUser._password,
+                panel_password: passwordForResponse,
                 server_name: serverName,
                 package: pkg.label,
                 memory: pteroServer.limits.memory,

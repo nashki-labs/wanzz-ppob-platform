@@ -1,7 +1,13 @@
+import crypto from 'crypto';
 import { createMessage, getUserMessages } from '../database.js';
 import { sendTelegram } from '../utils/telegram.js';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 export const getMessages = (req, res) => {
     try {
@@ -17,17 +23,17 @@ export const sendMessage = async (req, res) => {
         const { text } = req.body;
         if (!text) return res.status(400).json({ status: 'error', message: 'Pesan kosong.' });
 
-        const messageId = `msg-${Date.now()}`;
+        const messageId = crypto.randomUUID();
         createMessage({ id: messageId, userId: req.user.id, sender: 'user', text });
 
         const telegramText = `
 💬 <b>PESAN DUKUNGAN BARU</b>
 ━━━━━━━━━━━━━━━
-👤 <b>Pengirim:</b> ${req.user.name}
-📧 <b>Email:</b> ${req.user.email}
+👤 <b>Pengirim:</b> ${escapeHtml(req.user.name)}
+📧 <b>Email:</b> ${escapeHtml(req.user.email)}
 ━━━━━━━━━━━━━━━
 📝 <b>Pesan:</b>
-"${text}"
+"${escapeHtml(text)}"
 ━━━━━━━━━━━━━━━`;
         sendTelegram(ADMIN_CHAT_ID, telegramText);
 
@@ -47,11 +53,11 @@ export const supportLegacy = async (req, res) => {
     const text = `
 💬 <b>PESAN DUKUNGAN BARU (GUEST/EXTERNAL)</b>
 ━━━━━━━━━━━━━━━
-👤 <b>Pengirim:</b> ${user_name || 'Guest'}
-📧 <b>Email:</b> ${user_email || '-'}
+👤 <b>Pengirim:</b> ${escapeHtml(user_name) || 'Guest'}
+📧 <b>Email:</b> ${escapeHtml(user_email) || '-'}
 ━━━━━━━━━━━━━━━
 📝 <b>Pesan:</b>
-"${message}"
+"${escapeHtml(message)}"
 ━━━━━━━━━━━━━━━`;
 
     await sendTelegram(ADMIN_CHAT_ID, text);

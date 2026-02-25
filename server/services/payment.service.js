@@ -1,15 +1,33 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const CIAA_API_KEY = process.env.CIAA_API_KEY;
 const PAKASIR_SLUG = process.env.PAKASIR_SLUG;
 const PAKASIR_API_KEY = process.env.PAKASIR_API_KEY;
 
+async function safeFetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const contentType = response.headers.get('content-type');
+
+    if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error(`❌ [API_ERR] Non-JSON response from ${url}:`, text.substring(0, 100));
+        throw new Error('Vendor API sedang mengalami gangguan (Respon non-JSON).');
+    }
+
+    return await response.json();
+}
+
 /**
  * Fetch products from CiaaTopUp with profit margin calculation
  */
 export async function fetchCiaaProducts(profitPercent = '0') {
-    const response = await fetch('https://ciaatopup.my.id/api/h2h/price-list/all', {
+    const data = await safeFetchJson('https://ciaatopup.my.id/api/h2h/price-list/all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -18,7 +36,6 @@ export async function fetchCiaaProducts(profitPercent = '0') {
             profit_percent: profitPercent
         })
     });
-    const data = await response.json();
 
     let rawProducts = [];
     if (Array.isArray(data.data)) {
@@ -44,48 +61,44 @@ export async function fetchCiaaProducts(profitPercent = '0') {
  */
 export async function createCiaaTransaction(product_code, target, reff_id) {
     const payload = { product_code, target, reff_id, api_key: CIAA_API_KEY };
-    const response = await fetch('https://ciaatopup.my.id/api/h2h/transaction/create', {
+    return await safeFetchJson('https://ciaatopup.my.id/api/h2h/transaction/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    return await response.json();
 }
 
 /**
  * Sync transaction status from CiaaTopUp
  */
 export async function syncCiaaTransaction(vendor_id) {
-    const response = await fetch('https://ciaatopup.my.id/api/h2h/transaction/status', {
+    return await safeFetchJson('https://ciaatopup.my.id/api/h2h/transaction/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: vendor_id, api_key: CIAA_API_KEY })
     });
-    return await response.json();
 }
 
 /**
  * Create deposit on CiaaTopUp
  */
 export async function createCiaaDeposit(nominal, method, reff_id) {
-    const response = await fetch('https://ciaatopup.my.id/api/h2h/deposit/create', {
+    return await safeFetchJson('https://ciaatopup.my.id/api/h2h/deposit/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nominal, method, reff_id, api_key: CIAA_API_KEY })
     });
-    return await response.json();
 }
 
 /**
  * Fetch deposit methods from CiaaTopUp
  */
 export async function fetchCiaaDepositMethods() {
-    const response = await fetch('https://ciaatopup.my.id/api/h2h/deposit/methods', {
+    return await safeFetchJson('https://ciaatopup.my.id/api/h2h/deposit/methods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ api_key: CIAA_API_KEY })
     });
-    return await response.json();
 }
 
 /**
@@ -100,12 +113,11 @@ export async function createPakasirDeposit(nominal, method, reff_id, frontendUrl
         api_key: PAKASIR_API_KEY,
         redirect: redirectUrl
     };
-    const response = await fetch(`https://app.pakasir.com/api/transactioncreate/${method}`, {
+    const rawData = await safeFetchJson(`https://app.pakasir.com/api/transactioncreate/${method}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    const rawData = await response.json();
 
     if (rawData.payment) {
         return {

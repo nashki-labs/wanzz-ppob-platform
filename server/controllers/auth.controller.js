@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { validationResult } from 'express-validator';
 import db, { findUserByEmail, findUserById, createUser, updateUser } from '../database.js';
 import { sanitizeUser } from '../middlewares/auth.middleware.js';
@@ -23,20 +24,22 @@ export const register = async (req, res) => {
         }
 
         const passwordHash = bcrypt.hashSync(password, 10);
-        const userId = `user-${Date.now()}`;
-        const apiKey = `wanzz-sk-${[...Array(16)].map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('')}`;
+        const userId = crypto.randomUUID();
+        const apiKey = `wanzz-sk-${crypto.randomBytes(16).toString('hex')}`;
         const photoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3b82f6&color=fff`;
 
         createUser({ id: userId, name, email, phone: phone || null, passwordHash, photoUrl, apiKey });
 
         const user = findUserById(userId);
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+        const accessToken = jwt.sign({ userId: user.id, type: 'access' }, JWT_SECRET, { expiresIn: '2h' });
+        const refreshToken = jwt.sign({ userId: user.id, type: 'refresh' }, JWT_SECRET, { expiresIn: '30d' });
 
-        sendTelegram(ADMIN_CHAT_ID, `🆕 <b>User Baru:</b> ${name}\n📧 Email: ${email}\n📱 HP: ${phone || '-'}\n🔑 API Key: <code>${apiKey}</code>`);
+        sendTelegram(ADMIN_CHAT_ID, `🆕 <b>User Baru:</b> ${name}\n📧 Email: ${email}\n📱 HP: ${phone || '-'}\n🔑 API Key: (tersedia di profil user)`);
 
         res.json({
             status: 'success',
-            token,
+            token: accessToken,
+            refreshToken,
             user: sanitizeUser(user)
         });
     } catch (error) {
@@ -62,11 +65,31 @@ export const login = (req, res) => {
         return res.status(401).json({ status: 'error', message: 'Email atau password salah.' });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+    const accessToken = jwt.sign({ userId: user.id, type: 'access' }, JWT_SECRET, { expiresIn: '2h' });
+    const refreshToken = jwt.sign({ userId: user.id, type: 'refresh' }, JWT_SECRET, { expiresIn: '30d' });
     res.json({
         status: 'success',
-        token,
+        token: accessToken,
+        refreshToken,
         user: sanitizeUser(user)
+    });
+};
+
+export const refreshTokenHandler = (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+        return res.status(400).json({ status: 'error', message: 'Refresh token diperlukan.' });
+    }
+
+    jwt.verify(refreshToken, JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(403).json({ status: 'error', message: 'Refresh token tidak valid atau kadaluarsa.' });
+        if (decoded.type !== 'refresh') return res.status(403).json({ status: 'error', message: 'Token type tidak valid.' });
+
+        const user = findUserById(decoded.userId);
+        if (!user) return res.status(403).json({ status: 'error', message: 'User tidak ditemukan.' });
+
+        const newAccessToken = jwt.sign({ userId: user.id, type: 'access' }, JWT_SECRET, { expiresIn: '2h' });
+        res.json({ status: 'success', token: newAccessToken });
     });
 };
 

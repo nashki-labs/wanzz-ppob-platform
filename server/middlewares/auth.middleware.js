@@ -16,6 +16,7 @@ export function authenticateToken(req, res, next) {
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) return res.status(403).json({ status: 'error', message: 'Token tidak valid atau kadaluarsa.' });
+        if (decoded.type && decoded.type !== 'access') return res.status(403).json({ status: 'error', message: 'Token type tidak valid.' });
         const user = findUserById(decoded.userId);
         if (!user) return res.status(403).json({ status: 'error', message: 'User tidak ditemukan.' });
         req.user = user;

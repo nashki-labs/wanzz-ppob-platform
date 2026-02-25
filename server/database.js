@@ -1,13 +1,16 @@
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// (Moved above for dotenv)
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'wanzz.db');
 
@@ -102,6 +105,13 @@ db.exec(`
     \"unli\": {\"memo\": 0,     \"cpu\": 0,   \"disk\": 0,     \"price\": 50000, \"label\": \"Unlimited\"}
   }');
 
+  -- Performance Indexes
+  CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_deposits_user_id ON deposits(user_id);
+  CREATE INDEX IF NOT EXISTS idx_transactions_reff_id ON transactions(reff_id);
+  CREATE INDEX IF NOT EXISTS idx_deposits_reff_id ON deposits(reff_id);
+  CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
+
   CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -165,19 +175,21 @@ function seedAdmin() {
     return;
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ? OR id = ? OR api_key = ?').get(adminEmail, 'admin-01', 'ADMIN-ACCESS-SECRET');
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(adminEmail);
   if (!existing) {
+    const adminId = crypto.randomUUID();
+    const adminApiKey = `wanzz-admin-${crypto.randomBytes(24).toString('hex')}`;
     const hash = bcrypt.hashSync(adminPassword, 10);
     db.prepare(`
       INSERT OR IGNORE INTO users (id, name, email, password_hash, role, balance, photo_url, api_key)
-      VALUES (?, ?, ?, ?, 'admin', 99999999, ?, ?)
+      VALUES (?, ?, ?, ?, 'admin', 0, ?, ?)
     `).run(
-      'admin-01',
+      adminId,
       'Super Admin',
       adminEmail,
       hash,
       `https://ui-avatars.com/api/?name=Admin&background=ef4444&color=fff`,
-      'ADMIN-ACCESS-SECRET'
+      adminApiKey
     );
     console.log(`🔑 [DB] Admin user seeded: ${adminEmail}`);
   }
@@ -304,7 +316,7 @@ export function createMessage({ id, userId, sender, text }) {
 }
 
 export function getUserMessages(userId) {
-  return db.prepare('SELECT * FROM messages WHERE user_id = ? ORDER BY timestamp ASC').all();
+  return db.prepare('SELECT * FROM messages WHERE user_id = ? ORDER BY timestamp ASC').all(userId);
 }
 
 // Atomic transaction helper

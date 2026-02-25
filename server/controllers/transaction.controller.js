@@ -3,6 +3,7 @@ import db, {
     getSetting, createDepositRecord, runInTransaction,
     addBalance, updateTransactionStatus
 } from '../database.js';
+import crypto from 'crypto';
 import * as PaymentService from '../services/payment.service.js';
 import { sendTelegram } from '../utils/telegram.js';
 
@@ -19,8 +20,8 @@ export const createTx = async (req, res) => {
         return res.status(400).json({ status: 'error', message: 'Data transaksi tidak lengkap.' });
     }
 
-    const reffId = `order-${Date.now()}`;
-    const txId = `tx-${Date.now()}`;
+    const reffId = crypto.randomUUID();
+    const txId = crypto.randomUUID();
     let price;
 
     try {
@@ -38,12 +39,11 @@ export const createTx = async (req, res) => {
             return res.status(400).json({ status: 'error', message: 'Harga produk tidak valid.' });
         }
 
-        const currentBalance = getUserBalance(user.id);
-        if (currentBalance < price) {
-            return res.status(400).json({ status: 'error', message: `Saldo tidak cukup.` });
-        }
-
         runInTransaction(() => {
+            const currentBalance = getUserBalance(user.id);
+            if (currentBalance < price) {
+                throw new Error('SALDO_NOT_ENOUGH');
+            }
             const deducted = deductBalance(user.id, price);
             if (deducted.changes === 0) {
                 throw new Error('SALDO_NOT_ENOUGH');
@@ -98,8 +98,8 @@ export const createDepo = async (req, res) => {
     const activeGateway = getSetting('active_deposit_method') || 'ciaatopup';
 
     let finalNominal = nominal;
-    let reffId = `depo-${Date.now()}`;
-    let depoId = `dep-${Date.now()}`;
+    let reffId = crypto.randomUUID();
+    let depoId = crypto.randomUUID();
     let isUpdate = false;
 
     if (existing_deposit_id) {
@@ -195,7 +195,8 @@ export const getProducts = async (req, res) => {
         const products = await PaymentService.fetchCiaaProducts(profitPercent);
         res.json({ status: 'success', data: products });
     } catch (error) {
-        res.status(500).json({ status: 'error', data: [] });
+        console.error('❌ [GET_PRODUCTS_ERR]', error);
+        res.status(500).json({ status: 'error', data: [], message: error.message });
     }
 };
 

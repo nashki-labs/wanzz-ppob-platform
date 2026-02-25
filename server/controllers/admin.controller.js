@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import db, {
     getAllUsers, getAllTransactions, getAllDeposits,
     getSetting, setSetting, getUserMessages
@@ -57,7 +58,7 @@ export const updateProfitMargin = (req, res) => {
         db.prepare(`
             INSERT INTO audit_logs (id, admin_id, action, old_value, new_value)
             VALUES (?, ?, ?, ?, ?)
-        `).run(`audit-${Date.now()}`, adminId, 'change_profit_margin', oldPercent, String(nPercent));
+        `).run(crypto.randomUUID(), adminId, 'change_profit_margin', oldPercent, String(nPercent));
     } catch (auditErr) {
         console.error('❌ [AUDIT_ERR]', auditErr.message);
     }
@@ -68,14 +69,16 @@ export const updateProfitMargin = (req, res) => {
 export const getPteroSettings = (req, res) => {
     const packages = getSetting('ptero_packages') ? JSON.parse(getSetting('ptero_packages')) : null;
     const domain = getSetting('ptero_domain') || process.env.PTERO_DOMAIN || '';
-    const apiKey = getSetting('ptero_api_key') || process.env.PTERO_PLTA_API_KEY || '';
+    const rawKey = getSetting('ptero_api_key') || process.env.PTERO_PLTA_API_KEY || '';
+    const maskedKey = rawKey ? rawKey.substring(0, 8) + '••••••••••••' : '';
 
     res.json({
         status: 'success',
         data: {
             packages,
             domain,
-            apiKey
+            apiKey: maskedKey,
+            hasApiKey: !!rawKey
         }
     });
 };

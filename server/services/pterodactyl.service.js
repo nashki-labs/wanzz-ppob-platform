@@ -4,9 +4,15 @@
  * Reference: sc1/index.js (lines 1264-1342)
  */
 
-import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+import dotenv from 'dotenv';
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+
+import crypto from 'crypto';
 import db from '../database.js';
 
 // Helper to get configuration from DB with fallback to ENV
@@ -244,7 +250,7 @@ export async function getPterodactylUserByEmail(email) {
  * @returns {object} - Pterodactyl user attributes
  */
 export async function createPterodactylUser(username, email) {
-    const password = `${username}${Date.now().toString(36)}`;
+    const password = crypto.randomBytes(16).toString('hex');
 
     const data = await pteroFetch('/api/application/users', {
         method: 'POST',

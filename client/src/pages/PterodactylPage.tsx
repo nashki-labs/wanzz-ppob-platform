@@ -288,7 +288,7 @@ const PterodactylPage: React.FC<PterodactylPageProps> = ({ user, refreshUser }) 
                                                 {[
                                                     { label: 'User', value: panel.panel_username },
                                                     { label: 'Email', value: panel.panel_email },
-                                                    { label: 'Pass', value: panel.panel_password },
+                                                    { label: 'Pass', value: '••••••••' },
                                                 ].map(cred => (
                                                     <button
                                                         key={cred.label}
